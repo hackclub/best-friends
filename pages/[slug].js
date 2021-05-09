@@ -138,7 +138,7 @@ export default function App({ finalResults, slugs, options, error, notFound }) {
           ) : (
             ''
           )}
-          <Box sx={{ marginTop: '-0.83em', color: 'muted' }}>
+          <Box sx={{ marginTop: typeof finalResults.second != 'undefined'  ? '-0.83em' : '0em', color: 'muted' }}>
             ----------------
           </Box>
           <SelectSearch
