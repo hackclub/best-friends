@@ -2,7 +2,7 @@ import { Container, Heading, Text, Box, Flex, Link, Card } from 'theme-ui'
 import SelectSearch, { fuzzySearch } from 'react-select-search/dist/cjs'
 import { useRouter } from 'next/router'
 
-export default function App({ finalResults, slugs, options, error }) {
+export default function App({ finalResults, slugs, options, error, notFound }) {
   const router = useRouter()
   if (notFound) {
     return <Error statusCode={'404'} />
