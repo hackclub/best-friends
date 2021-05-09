@@ -2,7 +2,7 @@ import { Container, Heading, Text, Box, Flex, Link, Card } from 'theme-ui'
 import SelectSearch, { fuzzySearch } from 'react-select-search/dist/cjs'
 import { useRouter } from 'next/router'
 
-export default function App({ finalResults, slugs, options }) {
+export default function App({ finalResults, slugs, options, error }) {
   const router = useRouter()
   function renderFriend(props, option, snapshot, className) {
     const imgStyle = {
@@ -11,12 +11,12 @@ export default function App({ finalResults, slugs, options }) {
       marginRight: 10
     }
 
-    // If the page is not yet generated, this will be displayed
-    // initially until getStaticProps() finishes running
+    if (notFound) {
+      return <Error statusCode={'404'} />
+    }
     if (router.isFallback) {
       return <div>Loading...</div>
     }
-  
 
     return (
       <button
@@ -285,184 +285,188 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  const { WebClient } = require('@slack/web-api')
-  var cluster = require('set-clustering')
-  var GithubSlugger = require('github-slugger')
+  try {
+    const { WebClient } = require('@slack/web-api')
+    var cluster = require('set-clustering')
+    var GithubSlugger = require('github-slugger')
 
-  const token = process.env.SLACK_TOKEN
+    const token = process.env.SLACK_TOKEN
 
-  const web = new WebClient(token)
+    const web = new WebClient(token)
 
-  function checkDinoPoll(message) {
-    return message.user == 'U01RR8KDEPQ'
-  }
+    function checkDinoPoll(message) {
+      return message.user == 'U01RR8KDEPQ'
+    }
 
-  function checkOption(block) {
-    const result =
-      typeof block.text != 'undefined'
-        ? block.text.text.split('_(').length > 1
-        : false
-    return result
-  }
-  let messages = []
+    function checkOption(block) {
+      const result =
+        typeof block.text != 'undefined'
+          ? block.text.text.split('_(').length > 1
+          : false
+      return result
+    }
+    let messages = []
 
-  for await (const page of web.paginate('conversations.history', {
-    channel: 'C01U8UCHZC1'
-  })) {
-    messages = messages.concat(page.messages)
-  }
-  messages = messages.filter(checkDinoPoll)
+    for await (const page of web.paginate('conversations.history', {
+      channel: 'C01U8UCHZC1'
+    })) {
+      messages = messages.concat(page.messages)
+    }
+    messages = messages.filter(checkDinoPoll)
 
-  messages = messages.map(message => ({
-    results: message.blocks.filter(checkOption).map(block => ({
-      tag: block.text.text.split('_(')[0].trim(),
-      voters: block.text.text.split('_(')[1].split('\n')[1].split(', ')
+    messages = messages.map(message => ({
+      results: message.blocks.filter(checkOption).map(block => ({
+        tag: block.text.text.split('_(')[0].trim(),
+        voters: block.text.text.split('_(')[1].split('\n')[1].split(', ')
+      }))
     }))
-  }))
 
-  let people = {}
+    let people = {}
 
-  messages.map(message => {
-    message.results.map(area => {
-      area.voters.map(voter => {
-        if (typeof people[voter] == 'undefined') {
-          people[voter] = [area.tag]
+    messages.map(message => {
+      message.results.map(area => {
+        area.voters.map(voter => {
+          if (typeof people[voter] == 'undefined') {
+            people[voter] = [area.tag]
+          } else {
+            people[voter] = people[voter].concat([area.tag])
+          }
+        })
+      })
+    })
+    let peopleArray = Object.entries(people).map(person => ({
+      id: person[0],
+      votes: person[1]
+    }))
+
+    let relationships = {}
+
+    function similarity(x, y) {
+      var score = 0
+      x.votes.forEach(function (tx) {
+        y.votes.forEach(function (ty) {
+          if (tx == ty) score += 1
+        })
+      })
+      if (y.id != '' && x.id != '') {
+        if (typeof relationships[x.id] == 'undefined') {
+          relationships[x.id] = [{ id: y.id, score: score / y.votes.length }]
         } else {
-          people[voter] = people[voter].concat([area.tag])
+          relationships[x.id] = relationships[x.id].concat([
+            { id: y.id, score: score / y.votes.length }
+          ])
         }
-      })
-    })
-  })
-  let peopleArray = Object.entries(people).map(person => ({
-    id: person[0],
-    votes: person[1]
-  }))
+      }
+      return score
+    }
 
-  let relationships = {}
+    cluster(peopleArray, similarity)
 
-  function similarity(x, y) {
-    var score = 0
-    x.votes.forEach(function (tx) {
-      y.votes.forEach(function (ty) {
-        if (tx == ty) score += 1
+    let relationshipsArray = Object.entries(relationships).map(person => ({
+      id: person[0],
+      relationships: person[1]
+    }))
+
+    for (let x in relationshipsArray) {
+      relationshipsArray[x]['info'] = await web.users.info({
+        user: relationshipsArray[x]['id'].replace('<@', '').replace('>', '')
       })
-    })
-    if (y.id != '' && x.id != '') {
-      if (typeof relationships[x.id] == 'undefined') {
-        relationships[x.id] = [{ id: y.id, score: score / y.votes.length }]
-      } else {
-        relationships[x.id] = relationships[x.id].concat([
-          { id: y.id, score: score / y.votes.length }
-        ])
+      relationshipsArray[x]['info'] = {
+        avatar: relationshipsArray[x].info.user.profile.image_192,
+        name: relationshipsArray[x].info.user.profile.display_name,
+        id: relationshipsArray[x].info.user.id
       }
     }
-    return score
-  }
 
-  cluster(peopleArray, similarity)
+    var slugger = new GithubSlugger()
 
-  let relationshipsArray = Object.entries(relationships).map(person => ({
-    id: person[0],
-    relationships: person[1]
-  }))
+    let allThePeople = {}
 
-  for (let x in relationshipsArray) {
-    relationshipsArray[x]['info'] = await web.users.info({
-      user: relationshipsArray[x]['id'].replace('<@', '').replace('>', '')
-    })
-    relationshipsArray[x]['info'] = {
-      avatar: relationshipsArray[x].info.user.profile.image_192,
-      name: relationshipsArray[x].info.user.profile.display_name,
-      id: relationshipsArray[x].info.user.id
-    }
-  }
-
-  var slugger = new GithubSlugger()
-
-  let allThePeople = {}
-
-  let slugs = relationshipsArray.map(x => ({
-    slug: slugger.slug(x.info.name),
-    data: x,
-    name: x.info.name,
-    avatar: x.info.avatar
-  }))
-
-  relationshipsArray.map(x => {
-    allThePeople[x.info.id] = {
+    let slugs = relationshipsArray.map(x => ({
+      slug: slugger.slug(x.info.name),
+      data: x,
       name: x.info.name,
       avatar: x.info.avatar
-    }
-  })
+    }))
 
-  let options = slugs.map(x => ({
-    value: x.slug,
-    name: x.name,
-    photo: x.avatar
-  }))
-
-  function checkUser(user) {
-    console.log(user.slug)
-    console.log(params.slug)
-    return user.slug == params.slug
-  }
-
-  console.log(slugs.filter(checkUser))
-  console.log(allThePeople)
-  let user = slugs.filter(checkUser)[0]
-  let sortedArray = user.data.relationships
-    .sort(function (a, b) {
-      return a['score'] - b['score']
+    relationshipsArray.map(x => {
+      allThePeople[x.info.id] = {
+        name: x.info.name,
+        avatar: x.info.avatar
+      }
     })
-    .reverse()
 
-  let finalResults = {
-    me: user,
-    first: {
-      data: sortedArray[0],
-      userInfo:
-        allThePeople[sortedArray[0]['id'].replace('<@', '').replace('>', '')]
-    },
-    ...(typeof sortedArray[1] != 'undefined'
-      ? sortedArray[1].score > 0.4
-        ? {
-            second: {
-              data: sortedArray[1],
-              userInfo:
-                allThePeople[
-                  sortedArray[1]['id'].replace('<@', '').replace('>', '')
-                ]
+    let options = slugs.map(x => ({
+      value: x.slug,
+      name: x.name,
+      photo: x.avatar
+    }))
+
+    function checkUser(user) {
+      console.log(user.slug)
+      console.log(params.slug)
+      return user.slug == params.slug
+    }
+
+    console.log(slugs.filter(checkUser))
+    console.log(allThePeople)
+    let user = slugs.filter(checkUser)[0]
+    let sortedArray = user.data.relationships
+      .sort(function (a, b) {
+        return a['score'] - b['score']
+      })
+      .reverse()
+
+    let finalResults = {
+      me: user,
+      first: {
+        data: sortedArray[0],
+        userInfo:
+          allThePeople[sortedArray[0]['id'].replace('<@', '').replace('>', '')]
+      },
+      ...(typeof sortedArray[1] != 'undefined'
+        ? sortedArray[1].score > 0.4
+          ? {
+              second: {
+                data: sortedArray[1],
+                userInfo:
+                  allThePeople[
+                    sortedArray[1]['id'].replace('<@', '').replace('>', '')
+                  ]
+              }
             }
-          }
-        : {}
-      : {}),
-    ...(typeof sortedArray[2] != 'undefined'
-      ? sortedArray[2].score > 0.4
-        ? {
-            third: {
-              data: sortedArray[2],
-              userInfo:
-                allThePeople[
-                  sortedArray[2]['id'].replace('<@', '').replace('>', '')
-                ]
+          : {}
+        : {}),
+      ...(typeof sortedArray[2] != 'undefined'
+        ? sortedArray[2].score > 0.4
+          ? {
+              third: {
+                data: sortedArray[2],
+                userInfo:
+                  allThePeople[
+                    sortedArray[2]['id'].replace('<@', '').replace('>', '')
+                  ]
+              }
             }
-          }
-        : {}
-      : {}),
-    ...(typeof sortedArray[3] != 'undefined'
-      ? sortedArray[3].score > 0.4
-        ? {
-            fourth: {
-              data: sortedArray[3],
-              userInfo:
-                allThePeople[
-                  sortedArray[3]['id'].replace('<@', '').replace('>', '')
-                ]
+          : {}
+        : {}),
+      ...(typeof sortedArray[3] != 'undefined'
+        ? sortedArray[3].score > 0.4
+          ? {
+              fourth: {
+                data: sortedArray[3],
+                userInfo:
+                  allThePeople[
+                    sortedArray[3]['id'].replace('<@', '').replace('>', '')
+                  ]
+              }
             }
-          }
-        : {}
-      : {})
+          : {}
+        : {})
+    }
+    console.log(finalResults)
+    return { props: { finalResults, slugs, options } }
+  } catch {
+    return { props: { notFound: true } }
   }
-  console.log(finalResults)
-  return { props: { finalResults, slugs, options } }
 }
