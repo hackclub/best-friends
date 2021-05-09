@@ -4,6 +4,12 @@ import { useRouter } from 'next/router'
 
 export default function App({ finalResults, slugs, options, error }) {
   const router = useRouter()
+  if (notFound) {
+    return <Error statusCode={'404'} />
+  }
+  if (router.isFallback) {
+    return <div>Loading...</div>
+  }
   function renderFriend(props, option, snapshot, className) {
     const imgStyle = {
       borderRadius: '50%',
@@ -11,12 +17,7 @@ export default function App({ finalResults, slugs, options, error }) {
       marginRight: 10
     }
 
-    if (notFound) {
-      return <Error statusCode={'404'} />
-    }
-    if (router.isFallback) {
-      return <div>Loading...</div>
-    }
+    
 
     return (
       <button
