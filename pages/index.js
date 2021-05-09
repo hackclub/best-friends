@@ -33,9 +33,9 @@ export default function App({ relationshipsArray, slugs, options }) {
   }
   return (
     <Container>
-      <Flex sx={{ minHeight: '100vh', pt: '80px'}}>
-        <Box sx={{ maxWidth: '75%' }}>
-          <Heading sx={{ fontSize: '7em' }}>
+      <Flex sx={{ minHeight: '100vh', pt: ['40px','80px']}}>
+        <Box sx={{ maxWidth: ['90%', '100%', '75%'] }}>
+          <Heading sx={{ fontSize: ['3em','7em'], mb: ['12px', '0px'] }}>
             Who is your Hack Club{' '}
             <Text sx={t => t.util.gxText('red', 'orange')}>best friend?</Text>
           </Heading>

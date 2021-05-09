@@ -1,4 +1,4 @@
-import { Container, Heading, Text, Box, Flex, Link, Card } from 'theme-ui'
+import { Container, Heading, Text, Box, Image, Flex, Link, Card } from 'theme-ui'
 import SelectSearch, { fuzzySearch } from 'react-select-search/dist/cjs'
 import { useRouter } from 'next/router'
 
@@ -16,8 +16,6 @@ export default function App({ finalResults, slugs, options, error, notFound }) {
       verticalAlign: 'middle',
       marginRight: 10
     }
-
-    
 
     return (
       <button
@@ -41,19 +39,19 @@ export default function App({ finalResults, slugs, options, error, notFound }) {
   }
   return (
     <Container>
-      <Flex sx={{ minHeight: '100vh', pt: '80px' }}>
-        <Box sx={{ maxWidth: '75%' }}>
-          <Heading as="h1" sx={{ marginLeft: '8px' }}>
+      <Flex sx={{ minHeight: '100vh', pt: ['40px', '80px'] }}>
+        <Box sx={{ maxWidth: ['100vw', '75%'] }}>
+          <Heading as="h1" sx={{ marginLeft: ['0px', '8px'], maxWidth: '75vw' }}>
             {finalResults.me.name}'s new Hack Club best friend is:
           </Heading>
-          <Heading sx={{ fontSize: '7em' }}>
-            <img
+          <Heading sx={{ fontSize: ['3em', '7em'] }}>
+            <Image
               src={finalResults.first.userInfo.avatar}
-              style={{
+              sx={{
                 height: '1em',
                 verticalAlign: 'text-bottom',
-                borderRadius: '16px',
-                marginRight: '16px'
+                borderRadius: ['4px', '16px'],
+                marginRight: ['8px', '16px']
               }}
             />
             <Text sx={t => t.util.gxText('red', 'orange')}>
