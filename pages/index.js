@@ -167,5 +167,5 @@ export async function getStaticProps() {
     name: x.name,
     photo: x.avatar
   }))
-  return { props: { relationshipsArray, slugs, options } }
+  return { props: { relationshipsArray, slugs, options }, revalidate: 300 }
 }
