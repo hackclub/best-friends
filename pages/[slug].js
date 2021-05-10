@@ -264,8 +264,8 @@ export async function getStaticPaths() {
 
   var slugger = new GithubSlugger()
 
-  let slugs = relationshipsArray.map(x => ({
-    params: { slug: slugger.slug(x.info.name) }
+  let slugs = relationshipsArray.map(x => ( {
+    params: { slug: slugger.slug(x.info.name != '' ? x.info.name : 'unknownhuman' ) }
   }))
 
   let slugs1 = relationshipsArray.map(x => ({
