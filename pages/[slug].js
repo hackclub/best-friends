@@ -464,8 +464,8 @@ export async function getStaticProps({ params }) {
         : {})
     }
     console.log(finalResults)
-    return { props: { finalResults, slugs, options } }
+    return { props: { finalResults, slugs, options }, revalidate: 300}
   } catch {
-    return { props: { notFound: true } }
+    return { props: { notFound: true }, revalidate: 300}
   }
 }
