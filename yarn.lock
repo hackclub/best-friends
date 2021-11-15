@@ -2682,10 +2682,10 @@ react-refresh@0.8.3:
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.8.3.tgz#721d4657672d400c5e3c75d063c4a85fb2d5d68f"
   integrity sha512-X8jZHc7nCMjaCqoU+V2I0cOhNW+QMBwSUkeXnTi8IPe6zaRWfn60ZzvFDZqWPfmSJfjub7dDW1SP0jaHWLu/hg==
 
-react-select-search@^3.0.7:
-  version "3.0.7"
-  resolved "https://registry.yarnpkg.com/react-select-search/-/react-select-search-3.0.7.tgz#e3e57612657257ff8dde45354377a8be3d62c258"
-  integrity sha512-fOy5vHfeFpGHEv9n+xkvqCAIfoAon0WRaWTFujBaMS4tKwhEn7WAPoyO4DEQFTou1LOq0D5nDDOaqeMzOxpCZg==
+react-select-search@^3.0.9:
+  version "3.0.9"
+  resolved "https://registry.yarnpkg.com/react-select-search/-/react-select-search-3.0.9.tgz#6d3ab2707be26629d086b5ab2f2ba8ab774d58c4"
+  integrity sha512-+PHWypep3zZ9TCdTYIONPAldWX8Y85HUhq08xNvd0PmHt2bijVGTPdsFGB3ksn8qZ8A8KPgAA2ITOmNzbBOshw==
   optionalDependencies:
     fuse.js "^3.4.5"
 
